@@ -90,8 +90,6 @@ pipeline {
                 node_modules/.bin/netlify --version
                 echo "Deploying to production. Site ID: 4844b1b2-c017-4c6e-b224-4bf1274c67c7"
                 node_modules/.bin/netlify status
-                
-                # Tani kjo komandë do të bëjë deploy direkt dosjen build pa asnjë pengesë!
                 node_modules/.bin/netlify deploy --dir=build --prod
             '''
         }

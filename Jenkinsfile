@@ -101,6 +101,7 @@ pipeline {
                         --prod \
                         --site=$NETLIFY_SITE_ID \
                         --auth=$NETLIFY_AUTH_TOKEN
+                        --no-build
                 '''
             }
         }

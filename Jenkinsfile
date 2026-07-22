@@ -10,8 +10,7 @@ pipeline {
 
     stages {
 
-
-                stage('Build') {
+        stage('Build') {
             agent {
                 docker {
                     image 'node:18-alpine'
@@ -31,62 +30,47 @@ pipeline {
         }
 
 
-
         stage('Tests') {
 
             parallel {
 
-
                 stage('Unit tests') {
-
+                    agent {
+                        docker {
+                            image 'node:18-alpine'
+                            reuseNode true
+                        }
+                    }
                     steps {
-
                         sh '''
-                            docker run --rm \
-                            -v "$PWD:/app" \
-                            -w /app \
-                            node:18-alpine \
-                            npm test
+                            CI=true npm test -- --reporters=default --reporters=jest-junit
                         '''
                     }
-
-
                     post {
-
                         always {
-
                             junit 'jest-results/junit.xml'
-
                         }
                     }
                 }
 
 
-
-
                 stage('E2E') {
-
+                    agent {
+                        docker {
+                            image 'mcr.microsoft.com/playwright:v1.39.0-jammy'
+                            reuseNode true
+                        }
+                    }
                     steps {
-
                         sh '''
-                            docker run --rm \
-                            -v "$PWD:/app" \
-                            -w /app \
-                            mcr.microsoft.com/playwright:v1.39.0-jammy \
-                            sh -c "
-                                npm install serve &&
-                                serve -s build &
-                                sleep 10 &&
-                                npx playwright test --reporter=html
-                            "
+                            npm install serve
+                            npx serve -s build &
+                            sleep 10
+                            npx playwright test --reporter=html
                         '''
                     }
-
-
                     post {
-
                         always {
-
                             publishHTML([
                                 allowMissing: true,
                                 alwaysLinkToLastBuild: false,
@@ -96,7 +80,6 @@ pipeline {
                                 reportName: 'Playwright local',
                                 reportTitles: ''
                             ])
-
                         }
                     }
                 }
@@ -105,79 +88,45 @@ pipeline {
         }
 
 
-
-
         stage('Deploy') {
-
-
+            agent {
+                docker {
+                    image 'node:18-alpine'
+                    reuseNode true
+                }
+            }
             steps {
-
-
                 sh '''
-
-                    docker run --rm \
-                    -v "$PWD:/app" \
-                    -w /app \
-                    -e NETLIFY_AUTH_TOKEN="$NETLIFY_AUTH_TOKEN" \
-                    node:18-alpine \
-                    sh -c "
-
-                        npm install netlify-cli &&
-
-                        node_modules/.bin/netlify deploy \
+                    npm install netlify-cli
+                    node_modules/.bin/netlify deploy \
                         --dir=build \
                         --prod \
                         --site=$NETLIFY_SITE_ID \
                         --auth=$NETLIFY_AUTH_TOKEN \
                         --no-build
-
-                    "
-
                 '''
             }
         }
 
 
-
-
-
         stage('Prod E2E') {
-
-
+            agent {
+                docker {
+                    image 'mcr.microsoft.com/playwright:v1.39.0-jammy'
+                    reuseNode true
+                }
+            }
             environment {
-
                 CI_ENVIRONMENT_URL = 'https://tiny-monstera-bb890a.netlify.app'
-
             }
-
-
-
             steps {
-
-
                 sh '''
-
-                    docker run --rm \
-                    -v "$PWD:/app" \
-                    -w /app \
-                    -e CI_ENVIRONMENT_URL="$CI_ENVIRONMENT_URL" \
-                    mcr.microsoft.com/playwright:v1.39.0-jammy \
                     npx playwright test --reporter=html
-
                 '''
-
             }
-
-
-
             post {
-
-
                 always {
-
-
                     publishHTML([
-
                         allowMissing: true,
                         alwaysLinkToLastBuild: false,
                         keepAll: true,
@@ -185,17 +134,11 @@ pipeline {
                         reportFiles: 'index.html',
                         reportName: 'Playwright Production E2E',
                         reportTitles: ''
-
                     ])
-
                 }
-
             }
-
         }
 
-
     }
-
 
 }

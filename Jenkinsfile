@@ -96,12 +96,16 @@ pipeline {
             }
             steps {
                 sh '''
-                    npm install netlify-cli
+                    npm ci
+                    npm run build
+                    npm install netlify-cli node-jq
                     node_modules/.bin/netlify deploy \
                         --dir=build \
+                        --json \
                         --site=$NETLIFY_SITE_ID \
                         --auth=$NETLIFY_AUTH_TOKEN \
-                        --no-build
+                        --no-build > deploy-output.json
+                        node_modules/.bin/node-jq -r '.deploy_url' deploy-output.json
                 '''
             }
         }

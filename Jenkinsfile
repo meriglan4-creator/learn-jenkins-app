@@ -11,6 +11,13 @@ pipeline {
 
     stages {
 
+        stage('Docker') {
+            steps {
+                sh 'docker build -t my-playwright .'
+            }
+        }
+
+
         stage('Build') {
             agent {
                 docker {
@@ -140,14 +147,6 @@ pipeline {
             }
         }
 
-
-        stage('Approval') {
-            steps {
-            timeout(time: 15, unit: 'MINUTES') {
-                input message: 'Approve deployment to production?', ok: 'Deploy'
-                }
-            }
-        }
 
         stage('Deploy prod') {
             agent {

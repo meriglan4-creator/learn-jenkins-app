@@ -30,6 +30,14 @@ pipeline {
             }
         }
 
+        stage('Build AWS CLI image') {
+            steps {
+                sh '''
+                    docker build -t my-aws-cli -f Dockerfile-aws-cli .
+                '''
+            }
+        }
+
         stage('Build Docker image') {
             agent {
                 docker {
